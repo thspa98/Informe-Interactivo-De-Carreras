@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Comparación de Carreras - UNC</title>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0f0f10;
+      --card:#1a1a1d;
+      --text:#f5f5f7;
+      --muted:#c7c7cc;
+      --aero:#ffd54a;       /* Amarillo Aero */
+      --violet:#c77dff;     /* Violeta Industrial */
+      --divider:rgba(255,255,255,.2);
+      --link:#1e90ff;
+      --linkVisited:#9fb3ff;
+      --pillGray:#2a2a2e;
+      --pillBorder:#3a3a40;
+      --panelStep:110vh;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family: "Helvetica Neue", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:var(--bg); color:var(--text);
+      font-size:18px; line-height:1.6;
+    }
+
+    /* NAV / ÍNDICE */
+    .topnav{
+      position:fixed; top:0; left:0; right:0; z-index:1000;
+      display:flex; gap:18px; justify-content:center; align-items:center;
+      padding:14px 16px;
+      background:rgba(15,15,16,.55);
+      backdrop-filter:saturate(150%) blur(10px);
+      border-bottom:1px solid rgba(255,255,255,.08);
+      transform:translateY(0); transition:transform .28s ease;
+    }
+    .topnav.hide{ transform:translateY(-100%); }
+    .topnav a{ position:relative; color:#fff; text-decoration:none; font-weight:650; letter-spacing:.2px;
+      padding:8px 10px; border-radius:10px; transition:background .2s ease;}
+    .topnav a:visited{ color:#fff; }
+    .topnav a:hover{ background:rgba(255,255,255,.08); }
+    .topnav a.active{ color:#fff; background:rgba(255,255,255,.10); }
+    .topnav a.active::after{ content:""; position:absolute; left:10px; right:10px; bottom:4px; height:2px;
+      background:#ffffff; border-radius:2px; box-shadow:0 0 8px rgba(255,255,255,.25);}
+    .topnav .dot{opacity:.4}
+
+    /* Header con video */
+    header{
+      position:relative; display:flex; justify-content:center; align-items:center; text-align:center;
+      height:100vh; overflow:hidden; padding-top:56px;
+    }
+    #bg-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-1; filter:brightness(.4); }
+    header h1{
+      font-size:clamp(2.2rem,4.2vw,3.2rem); font-weight:800; max-width:980px; line-height:1.12; margin:0 1rem;
+      animation:fadeInUp 1.2s ease both; letter-spacing:.2px;
+    }
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+
+    /* Secciones / tarjetas */
+    section{padding:88px 8%; position:relative; z-index:1;}
+    h2{font-size:2.1rem;margin:0 0 24px;text-align:center; letter-spacing:.2px}
+    .card{
+      background:var(--card); border-radius:22px; padding:44px; margin-bottom:68px;
+      box-shadow:0 10px 25px rgba(0,0,0,.3);
+    }
+
+    /* Comparación base */
+    .compare{display:grid; grid-template-columns:1fr 1fr; gap:68px; position:relative}
+    .compare::before{ content:""; position:absolute; inset:auto 50% 0 50%; width:1px; background:var(--divider); }
+    .aero h3,.aero h2{color:var(--aero)}
+    .industrial h3,.industrial h2{color:var(--violet)}
+    h3{font-size:1.35rem; margin:0 0 10px}
+    ul{list-style:none; padding:0; margin:0}
+    ul li{margin:12px 0; padding-left:12px}
+    .aero ul li{border-left:3px solid var(--aero)}
+    .industrial ul li{border-left:3px solid var(--violet)}
+
+    /* Fondo apilado detrás */
+    .parallax-container{position:relative; z-index:0;}
+    .bg-layer{ position:absolute; inset:0; z-index:0; pointer-events:none;}
+    .bg-panel{
+      position:absolute; left:0; right:0; height:var(--panelStep);
+      top:calc(var(--i) * var(--panelStep) + var(--shift, 0vh));
+      background-size:cover; background-position:center;
+      opacity:.24; filter:saturate(105%); will-change:transform;
+    }
+    .bg-mask-top, .bg-mask-bottom{
+      position:absolute; left:0; right:0; height:160px; pointer-events:none; z-index:1;
+      background:linear-gradient(to bottom, rgba(15,15,16,1), rgba(15,15,16,0));
+    }
+    .bg-mask-bottom{ top:auto; bottom:0; background:linear-gradient(to top, rgba(15,15,16,1), rgba(15,15,16,0)); }
+    .parallax-content{position:relative; z-index:2;}
+
+    /* Timeline (línea + guión con halo animado) */
+    .timeline-container{display:grid; grid-template-columns:1fr 1fr; gap:68px}
+    .timeline{position:relative; margin:22px 0; padding:22px 0}
+    .timeline::after{content:""; position:absolute; width:4px; top:0; bottom:0; left:40px; margin-left:-2px}
+    .aero .timeline::after{background:var(--aero)}
+    .industrial .timeline::after{background:var(--violet)}
+
+    .timeline-item{margin:26px 0; padding-left:100px; position:relative}
+    /* Guion centrado sobre la línea vertical */
+    .tl-dash{
+      position:absolute; left:40px; top:50%;
+      transform:translate(-50%,-50%);
+      width:32px; height:4px; border-radius:3px; z-index:2;
+      background:currentColor; opacity:.95;
+      box-shadow:0 0 0 rgba(0,0,0,0);
+      transition:box-shadow .25s ease, transform .25s ease;
+    }
+    .aero .tl-dash{ color:var(--aero); }
+    .industrial .tl-dash{ color:var(--violet); }
+
+    /* Bloque de texto */
+    .timeline-content{
+      background:var(--card); padding:20px 22px; border-radius:12px; text-align:left;
+      font-size:1.22rem; line-height:1.6;
+      transition:box-shadow .25s ease, transform .25s ease, outline-color .25s ease;
+      outline:1px solid rgba(255,255,255,.06);
+    }
+    .timeline-content strong{font-size:1.07em}
+
+    /* Halo animado al hover (guion o tarjeta) */
+    @keyframes haloAero{
+      0%{ box-shadow:0 0 0 0 rgba(255,213,74,.0); }
+      50%{ box-shadow:0 0 22px 6px rgba(255,213,74,.35); }
+      100%{ box-shadow:0 0 0 0 rgba(255,213,74,.0); }
+    }
+    @keyframes haloInd{
+      0%{ box-shadow:0 0 0 0 rgba(199,125,255,.0); }
+      50%{ box-shadow:0 0 22px 6px rgba(199,125,255,.35); }
+      100%{ box-shadow:0 0 0 0 rgba(199,125,255,.0); }
+    }
+
+    /* Aero hover */
+    .aero .timeline-item:hover .tl-dash{
+      transform:translate(-50%,-50%) scale(1.05);
+      animation:haloAero 1.4s ease-in-out infinite;
+    }
+    .aero .timeline-item:hover .timeline-content{
+      box-shadow:0 12px 28px rgba(0,0,0,.35), 0 0 18px rgba(255,213,74,.25);
+      outline-color:rgba(255,213,74,.35);
+      transform:translateY(-1px);
+    }
+
+    /* Industrial hover */
+    .industrial .timeline-item:hover .tl-dash{
+      transform:translate(-50%,-50%) scale(1.05);
+      animation:haloInd 1.4s ease-in-out infinite;
+    }
+    .industrial .timeline-item:hover .timeline-content{
+      box-shadow:0 12px 28px rgba(0,0,0,.35), 0 0 18px rgba(199,125,255,.25);
+      outline-color:rgba(199,125,255,.35);
+      transform:translateY(-1px);
+    }
+
+    /* Stats */
+    .stats-wrap{margin-top:10px}
+    .stats-grid{display:grid; grid-template-columns:1fr 1fr; gap:68px; position:relative}
+    .stats-grid::before{content:""; position:absolute; inset:auto 50% 0 50%; width:1px; background:var(--divider)}
+    .stat-card{background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:24px; box-shadow:0 10px 20px rgba(0,0,0,.25)}
+    .stat-title{font-size:1.35rem; font-weight:800; margin:0 0 12px; letter-spacing:.2px}
+    .stat-value{font-size:2.2rem; font-weight:850; margin:0 0 16px}
+    .bar{height:14px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden}
+    .bar > span{display:block; height:100%}
+    .bar-aero{background:linear-gradient(90deg, #ffe070, var(--aero))}
+    .bar-violet{background:linear-gradient(90deg, #b87cff, var(--violet))}
+    .bar-dual{background:linear-gradient(90deg, var(--aero), var(--aero) 50%, #b87cff 50%, var(--violet))}
+    .source{margin-top:12px; font-size:1rem; color:#e2e2e6}
+    .source a{color:var(--link)} .source a:visited{color:var(--linkVisited)}
+
+    /* Links UNC */
+    .links-unc{
+      border:1px solid rgba(255,255,255,.12); border-radius:22px; padding:30px;
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      box-shadow:0 18px 40px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.04);
+    }
+    .links-unc h3{margin:0 0 12px; font-size:1.6rem}
+    .links-unc p{margin:0 0 20px; color:#e7e7ea; font-size:1.1rem}
+    .links-unc .links{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+    .link-pill{
+      display:block; padding:16px 18px; border-radius:16px; text-align:center; font-weight:800;
+      text-decoration:none; box-shadow:0 8px 20px rgba(0,0,0,.35);
+      border:1px solid var(--pillBorder); background:var(--pillGray);
+      transition:transform .15s ease, filter .15s ease, box-shadow .2s ease;
+    }
+    .pill-aero{ color:var(--aero) !important; }
+    .pill-aero:visited{ color:var(--aero) !important; }
+    .pill-aero:hover{ color:var(--aero) !important; text-decoration:underline; }
+    .pill-industrial{ color:var(--violet) !important; }
+    .pill-industrial:visited{ color:var(--violet) !important; }
+    .pill-industrial:hover{ color:var(--violet) !important; text-decoration:underline; }
+
+    /* Enlaces generales */
+    a{color:var(--link); text-decoration:none}
+    a:visited{color:var(--linkVisited)}
+    a:hover{text-decoration:underline}
+
+    .conclusion p{font-size:1.18rem; line-height:1.7}
+    footer{ text-align:center; padding:44px; font-size:1rem; color:var(--muted); background:#0b0b0c; }
+
+    @media (max-width: 900px){
+      .compare, .timeline-container, .stats-grid{grid-template-columns:1fr; gap:36px}
+      .compare::before, .stats-grid::before{display:none}
+      section{padding:64px 6%}
+      .links-unc .links{grid-template-columns:1fr}
+      .topnav{padding:12px 10px; gap:10px}
+      .bg-panel{background-attachment:scroll}
+    }
+  </style>
+</head>
+<body>
+  <!-- ÍNDICE -->
+  <nav class="topnav" id="topnav">
+    <a href="#motivacion">Motivación e Intereses</a><span class="dot">•</span>
+    <a href="#estadisticas">Estadísticas</a><span class="dot">•</span>
+    <a href="#links-unc">Links UNC</a><span class="dot">•</span>
+    <a href="#planes">Planes</a><span class="dot">•</span>
+    <a href="#conclusion">Conclusión</a>
+  </nav>
+
+  <!-- HEADER CON VIDEO -->
+  <header>
+    <video autoplay muted loop id="bg-video" aria-label="Video introductorio">
+      <source src="video ingenierias.mp4" type="video/mp4"/>
+      Tu navegador no soporta video en HTML5.
+    </video>
+    <h1>Comparación de Carreras: Ingeniería Aeroespacial vs Ingeniería Industrial</h1>
+  </header>
+
+  <!-- MOTIVACIÓN -->
+  <section class="card" id="motivacion" data-aos="fade-up">
+    <h2>Motivación e Intereses</h2>
+    <div class="compare">
+      <div class="aero">
+        <h3>Ingeniería Aeroespacial</h3>
+        <ul>
+          <li>Pasión por el espacio, aviones y tecnología avanzada.</li>
+          <li>Disfrute de la matemática y la física.</li>
+          <li>Innovación y prestigio en un campo especializado.</li>
+        </ul>
+      </div>
+      <div class="industrial">
+        <h3>Ingeniería Industrial</h3>
+        <ul>
+          <li>Optimización de procesos y gestión de recursos.</li>
+          <li>Interés por logística, calidad y mejora continua.</li>
+          <li>Amplia salida laboral y versatilidad sectorial.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- FONDOS APILADOS DETRÁS -->
+  <div class="parallax-container">
+    <div class="bg-layer" aria-hidden="true">
+      <div class="bg-mask-top"></div>
+      <div class="bg-panel" style="--i:0; --shift:0vh; background-image:url('wp8215382-spacex-starship-wallpapers.jpg')"></div>
+      <div class="bg-panel" style="--i:1; --shift:40vh; background-image:url('ingenieria-industrial-datos-desconocidos-678x381.jpg')"></div>
+      <div class="bg-mask-bottom"></div>
+    </div>
+
+    <div class="parallax-content">
+      <!-- ESTADÍSTICAS -->
+      <section class="card stats-wrap" id="estadisticas" data-aos="fade-up">
+        <h2>Estadísticas en Argentina</h2>
+        <div class="stats-grid">
+          <div class="aero">
+            <div class="stat-card">
+              <p class="stat-title">Graduados anuales en disciplinas aeroespaciales (aprox.)</p>
+              <p class="stat-value">~ 50–80</p>
+              <div class="bar"><span class="bar-aero" style="width:22%"></span></div>
+              <p class="source">
+                Fuente:
+                <a href="https://www.infobae.com/educacion/2018/01/24/psicologos-y-abogados-pero-no-ingenieros-en-algunas-disciplinas-clave-se-reciben-menos-de-25-alumnos/" target="_blank" rel="noopener">Infobae (2018)</a>,
+                <a href="https://www.argentina.gob.ar/ciencia" target="_blank" rel="noopener">Ministerio de Ciencia</a>,
+                <a href="https://iua.edu.ar/" target="_blank" rel="noopener">IUA</a>.
+              </p>
+            </div>
+            <div class="stat-card" style="margin-top:18px">
+              <p class="stat-title">Ecosistema aeroespacial local (cadena de valor)</p>
+              <p class="stat-value">+1.000 proveedores</p>
+              <div class="bar"><span class="bar-aero" style="width:70%"></span></div>
+              <p class="source">
+                Fuente:
+                <a href="https://www.invap.com.ar/" target="_blank" rel="noopener">INVAP</a>,
+                <a href="https://www.veng.com.ar/" target="_blank" rel="noopener">VENG</a>,
+                <a href="https://www.conae.gob.ar/" target="_blank" rel="noopener">CONAE</a>.
+              </p>
+            </div>
+          </div>
+
+          <div class="industrial">
+            <div class="stat-card">
+              <p class="stat-title">Graduados anuales de Ingeniería (todas las ramas)</p>
+              <p class="stat-value">~ 6.000–8.000</p>
+              <div class="bar"><span class="bar-violet" style="width:85%"></span></div>
+              <p class="source">
+                Fuente:
+                <a href="https://cai.org.ar/" target="_blank" rel="noopener">Centro Argentino de Ingenieros (CAI)</a>,
+                <a href="https://www.cin.edu.ar/" target="_blank" rel="noopener">CIN</a>,
+                <a href="https://www.infobae.com/educacion/2018/06/07/solo-el-21-de-los-alumnos-de-las-carreras-de-ingenieria-se-recibe-a-tiempo-presentaron-un-plan-para-que-haya-mas-graduados/" target="_blank" rel="noopener">Infobae (2018)</a>.
+              </p>
+            </div>
+            <div class="stat-card" style="margin-top:18px">
+              <p class="stat-title">Tasa de egreso “a tiempo” en Ingeniería (todas)</p>
+              <p class="stat-value">≈ 20–25%</p>
+              <div class="bar"><span class="bar-dual" style="width:25%"></span></div>
+              <p class="source">
+                Fuente:
+                <a href="https://www.infobae.com/educacion/2018/06/07/solo-el-21-de-los-alumnos-de-las-carreras-de-ingenieria-se-recibe-a-tiempo-presentaron-un-plan-para-que-haya-mas-graduados/" target="_blank" rel="noopener">Plan para más graduados de Ingeniería</a>,
+                <a href="https://www.argentina.gob.ar/educacion" target="_blank" rel="noopener">Ministerio de Educación</a>.
+              </p>
+            </div>
+          </div>
+        </div>
+        <p class="source" style="margin-top:18px">Nota: Las cifras son órdenes de magnitud para contextualizar la comparación.</p>
+      </section>
+
+      <!-- LINKS OFICIALES UNC -->
+      <section class="card links-unc" id="links-unc" data-aos="fade-up">
+        <h3>Links oficiales de la UNC</h3>
+        <p>Acá están los sitios de las carreras en la UNC. Hay <strong>videos de estudiantes</strong> y al final podés ver el <strong>PLAN DE ESTUDIO</strong>.</p>
+        <div class="links">
+          <a class="link-pill pill-aero" href="https://fcefyn.unc.edu.ar/facultad/secretarias/academica/escuelas/escuela-de-ingenieria-mecanica-aeronautica/carrera-ingenieria-aeroespacial/" target="_blank" rel="noopener">Ingeniería Aeroespacial — UNC</a>
+          <a class="link-pill pill-industrial" href="https://fcefyn.unc.edu.ar/facultad/secretarias/academica/escuelas/ingenieria-industrial/carrera-ingenieria-industrial/" target="_blank" rel="noopener">Ingeniería Industrial — UNC</a>
+        </div>
+      </section>
+
+      <!-- INSTITUCIONES Y DURACIÓN -->
+      <section class="card" id="instituciones" data-aos="fade-up">
+        <h2>Instituciones y Duración</h2>
+        <div class="compare">
+          <div class="aero">
+            <h3>Ingeniería Aeroespacial</h3>
+            <ul>
+              <li>UNC – Facultad de Ciencias Exactas, Físicas y Naturales (FCEFyN)</li>
+              <li>IUA – Instituto Universitario Aeronáutico</li>
+              <li>Duración estimada: 5 años</li>
+            </ul>
+          </div>
+          <div class="industrial">
+            <h3>Ingeniería Industrial</h3>
+            <ul>
+              <li>UNC – Facultad de Ciencias Exactas, Físicas y Naturales (FCEFyN)</li>
+              <li>Otras: UTN Córdoba, UCC</li>
+              <li>Duración estimada: 5 años</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- PLANES DE ESTUDIO (TIMELINES con GUIONES) -->
+      <section class="card" id="planes" data-aos="fade-up">
+        <h2>Planes de Estudio</h2>
+        <div class="timeline-container">
+          <div class="aero">
+            <h3>Ingeniería Aeroespacial</h3>
+            <div class="timeline">
+              <div class="timeline-item">
+                <span class="tl-dash" aria-hidden="true"></span>
+                <div class="timeline-content"><strong>1er Año:</strong> Matemática, Física, Química, Introducción.</div>
+              </div>
+              <div class="timeline-item">
+                <span class="tl-dash" aria-hidden="true"></span>
+                <div class="timeline-content"><strong>2do Año:</strong> Mecánica, Álgebra, Termodinámica.</div>
+              </div>
+              <div class="timeline-item">
+                <span class="tl-dash" aria-hidden="true"></span>
+                <div class="timeline-content"><strong>3er Año:</strong> Aerodinámica, Materiales.</div>
+              </div>
+              <div class="timeline-item">
+                <span class="tl-dash" aria-hidden="true"></span>
+                <div class="timeline-content"><strong>4to Año:</strong> Propulsión, Control de Vuelo.</div>
+              </div>
+              <div class="timeline-item">
+                <span class="tl-dash" aria-hidden="true"></span>
+                <div class="timeline-content"><strong>5to Año:</strong> Práctica Profesional, Proyecto Final.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="industrial">
+            <h3>Ingeniería Industrial</h3>
+            <div class="timeline">
+              <div class="timeline-item">
+                <span class="tl-dash" aria-hidden="true"></span>
+                <div class="timeline-content"><strong>1er Año:</strong> Matemática, Física, Química, Introducción.</div>
+              </div>
+              <div class="timeline-item">
+                <span class="tl-dash" aria-hidden="true"></span>
+                <div class="timeline-content"><strong>2do Año:</strong> Estadística, Programación, Termodinámica.</div>
+              </div>
+              <div class="timeline-item">
+                <span class="tl-dash" aria-hidden="true"></span>
+                <div class="timeline-content"><strong>3er Año:</strong> Procesos Productivos, Organización.</div>
+              </div>
+              <div class="timeline-item">
+                <span class="tl-dash" aria-hidden="true"></span>
+                <div class="timeline-content"><strong>4to Año:</strong> Logística, Gestión de Calidad.</div>
+              </div>
+              <div class="timeline-item">
+                <span class="tl-dash" aria-hidden="true"></span>
+                <div class="timeline-content"><strong>5to Año:</strong> Práctica Profesional, Proyecto Final.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONCLUSIÓN -->
+      <section class="card conclusion" id="conclusion" data-aos="fade-up">
+        <h2>Conclusión</h2>
+        <p>Ambas carreras ofrecen desafíos y oportunidades únicas. Ingeniería Aeroespacial destaca por el enfoque especializado en aeronaves y el espacio, mientras que Ingeniería Industrial resalta por la versatilidad y amplitud en distintos sectores. Por último, en lo que respecta a mi decisión, no es una elección fácil ya que aunque las características de ing. Industrial coincidan con mis resultados en el cuadernillo "Proyectate", uno de mis sueños o aspiraciones son construir una aeronave o en su defecto un satélite.</p>
+      </section>
+    </div>
+  </div>
+
+  <footer>Por Thomás Spalletti · 2025</footer>
+
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script>
+    AOS.init({ duration: 1200, once: true });
+
+    // NAV auto-hide
+    (function(){
+      const nav = document.getElementById('topnav');
+      let lastY = window.scrollY;
+      window.addEventListener('scroll', () => {
+        const y = window.scrollY;
+        if (y > lastY && y > 80) { nav.classList.add('hide'); } else { nav.classList.remove('hide'); }
+        lastY = y;
+      }, {passive:true});
+    })();
+
+    // Parallax apilado detrás
+    (function(){
+      const container = document.querySelector('.parallax-container');
+      const panels = document.querySelectorAll('.bg-panel');
+      function onScroll(){
+        if(!container) return;
+        const rect = container.getBoundingClientRect();
+        const start = window.scrollY + rect.top;
+        const rel = window.scrollY - start;
+        panels.forEach((p, idx) => {
+          const speed = 0.18 + idx * 0.07;
+          p.style.transform = `translateY(${rel * speed}px)`;
+        });
+      }
+      onScroll();
+      window.addEventListener('scroll', onScroll, {passive:true});
+      window.addEventListener('resize', onScroll);
+    })();
+
+    // Indicador de sección activa en el índice
+    (function(){
+      const ids = ["motivacion","estadisticas","links-unc","planes","conclusion"];
+      const links = Array.from(document.querySelectorAll('.topnav a'));
+      const map = Object.fromEntries(links.map(a => [a.getAttribute('href').slice(1), a]));
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          const id = entry.target.id;
+          if (entry.isIntersecting) {
+            links.forEach(a => a.classList.remove('active'));
+            if (map[id]) map[id].classList.add('active');
+          }
+        });
+      }, { root: null, rootMargin: "0px 0px -60% 0px", threshold: 0.25 });
+      ids.forEach(id => { const el = document.getElementById(id); if (el) observer.observe(el); });
+    })();
+  </script>
+</body>
+</html>
